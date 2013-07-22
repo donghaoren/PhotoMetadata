@@ -44,3 +44,7 @@ def process(path, opt):
     # This instead.
     if "Exif.Canon.LensModel" in ks:
         opt["lens_model"] = meta["Exif.Canon.LensModel"].human_value
+    
+    for key in opt:
+        if isinstance(opt[key], str):
+            opt[key] = unicode(opt[key], "utf-8", errors = 'ignore')
