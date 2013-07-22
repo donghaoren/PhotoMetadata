@@ -66,7 +66,7 @@ def update(db = "db.sqlite", root = "."):
                     continue
 
                 print "File: %s" % rpath
-                hash_value = sha256_file(rpath)
+                hash_value = sha256_file(path)
                 for (_path, ) in c1.execute("SELECT path FROM photos WHERE hash = ?", (hash_value, )):
                     print "  Duplicate: %s" % _path
 
