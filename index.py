@@ -89,7 +89,7 @@ def update(db = "db.sqlite", root = "."):
                 else:
                   process_generic(path, metadata)
 
-                print ", ".join([ str(metadata[x]) for x in metadata ]), mtime, size
+                #print ", ".join([ str(metadata[x]) for x in metadata ]), mtime, size
 
                 c1.execute("""INSERT INTO photos
                      (
