@@ -20,9 +20,6 @@ def sha256_file(path):
         sha256.update(chunk)
     return unicode(sha256.hexdigest())
 
-
-
-
 def update(db = "db.sqlite", root = "."):
     print "Update: DB = %s, ROOT = %s" % (db, root)
 
@@ -51,7 +48,6 @@ def update(db = "db.sqlite", root = "."):
                 if not ext in acceptable_extensions: continue
 
                 # Read filesystem metadata.
-                print "File: %s" % path
                 stat_v = os.stat(path)
                 mtime = int(stat_v.st_mtime)
                 size = stat_v.st_size
@@ -68,8 +64,10 @@ def update(db = "db.sqlite", root = "."):
                     print "Exist: %s" % path
                     continue
 
-                hash_value = "none"
-                #hash_value = sha256_file(path)
+                print "File: %s" % path
+                hash_value = sha256_file(path)
+                for (_path, ) in c1.execute("SELECT path FROM photos WHERE hash = ?", (hash_value, )):
+                    print "  Duplicate: %s" % _path
 
                 # Initial metadata, everything is unknown.
                 metadata = {
