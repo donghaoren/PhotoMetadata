@@ -42,7 +42,7 @@ def update(db = "db.sqlite", root = "."):
         dirs[:] = [d for d in dirs if not d[0] == '.']
         for f in files:
             try:
-                path = os.path.join(root, folder, f)
+                path = os.path.join(folder, f)
                 rpath = os.path.relpath(path, root)
                 # Filter, only accept RAW files.
                 ext = os.path.splitext(path)[1][1:].lower()
