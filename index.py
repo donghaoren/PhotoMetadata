@@ -7,9 +7,10 @@ import hashlib
 import time
 
 from canon import process as process_canon
+from generic import process as process_generic
 
 acceptable_extensions = set([
-    "cr2", "nef", "dng"
+    "cr2", "rw2"
 ])
 
 def sha256_file(path):
@@ -52,7 +53,7 @@ def update(db = "db.sqlite", root = "."):
                 # Read filesystem metadata.
                 print "File: %s" % path
                 stat_v = os.stat(path)
-                mtime = stat_v.st_mtime
+                mtime = int(stat_v.st_mtime)
                 size = stat_v.st_size
 
                 # Is the file already processed?
@@ -67,7 +68,8 @@ def update(db = "db.sqlite", root = "."):
                     print "Exist: %s" % path
                     continue
 
-                hash_value = sha256_file(path)
+                hash_value = "none"
+                #hash_value = sha256_file(path)
 
                 # Initial metadata, everything is unknown.
                 metadata = {
@@ -86,6 +88,8 @@ def update(db = "db.sqlite", root = "."):
 
                 if ext == "cr2":
                     process_canon(path, metadata)
+                else:
+                  process_generic(path, metadata)
 
                 print ", ".join([ str(metadata[x]) for x in metadata ]), mtime, size
 
