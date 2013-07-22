@@ -43,6 +43,7 @@ def update(db = "db.sqlite", root = "."):
         for f in files:
             try:
                 path = os.path.join(folder, f)
+                rpath = os.relpath(path, root)
                 # Filter, only accept RAW files.
                 ext = os.path.splitext(path)[1][1:].lower()
                 if not ext in acceptable_extensions: continue
@@ -54,18 +55,18 @@ def update(db = "db.sqlite", root = "."):
 
                 # Is the file already processed?
                 exist = False
-                for (_mtime, _size, ) in c1.execute("SELECT mtime, size FROM photos WHERE path = ?", (path, )):
+                for (_mtime, _size, ) in c1.execute("SELECT mtime, size FROM photos WHERE path = ?", (rpath, )):
                     if size == size and mtime == _mtime:
                         exist = True
                     else:
-                        print "Photo mismatch: %s, mtime = %d -> %d, size = %d -> %d" % (path, _mtime, mtime, _size, size)
-                        c1.execute("DELETE FROM photos WHERE path = ?", (path, ))
+                        print "Photo mismatch: %s, mtime = %d -> %d, size = %d -> %d" % (rpath, _mtime, mtime, _size, size)
+                        c1.execute("DELETE FROM photos WHERE path = ?", (rpath, ))
                 if exist:
-                    print "Exist: %s" % path
+                    print "Exist: %s" % rpath
                     continue
 
-                print "File: %s" % path
-                hash_value = sha256_file(path)
+                print "File: %s" % rpath
+                hash_value = sha256_file(rpath)
                 for (_path, ) in c1.execute("SELECT path FROM photos WHERE hash = ?", (hash_value, )):
                     print "  Duplicate: %s" % _path
 
@@ -108,7 +109,7 @@ def update(db = "db.sqlite", root = "."):
                       ?, ?, ?)
                      """,
                      (
-                      path, size, hash_value, mtime,
+                      rpath, size, hash_value, mtime,
                       metadata["original_date_time"],
                       metadata["camera_model"], metadata["lens_model"],
                       metadata["focal_length"],
