@@ -39,7 +39,7 @@ def update(db = "db.sqlite", root = "."):
     c1.execute("CREATE INDEX IF NOT EXISTS idx_otime ON photos(original_time)")
 
     # Scan for RAW files.
-    for folder, subs, files in os.walk(root):
+    for folder, dirs, files in os.walk(root):
         files = [f for f in files if not f[0] == '.']
         dirs[:] = [d for d in dirs if not d[0] == '.']
         for f in files:
