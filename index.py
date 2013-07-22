@@ -43,7 +43,7 @@ def update(db = "db.sqlite", root = "."):
         for f in files:
             try:
                 path = os.path.join(folder, f)
-                rpath = os.relpath(path, root)
+                rpath = os.path.relpath(path, root)
                 # Filter, only accept RAW files.
                 ext = os.path.splitext(path)[1][1:].lower()
                 if not ext in acceptable_extensions: continue
