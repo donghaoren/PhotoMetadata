@@ -22,8 +22,8 @@ Usage
 
 1. Write config.ini to tell the program where your photos are.
 
-    [main]
-    path = <path to a directory containing your RAW files>
+  [main]
+  path = <path to a directory containing your RAW files>
 
 2. Run `python run.py`.
 
