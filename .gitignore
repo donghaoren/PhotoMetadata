@@ -1,1 +1,4 @@
 *.pyc
+*.sqlite
+.DS_Store
+.AppleDouble
