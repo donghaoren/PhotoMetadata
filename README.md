@@ -13,8 +13,8 @@ GPLv3
 Dependencies
 ----
 
-* Python:
-  * pyexiv2
+* Python 2.x:
+  * pyexiv2 <http://tilloy.net/dev/pyexiv2/>
   * sqlite3
 
 * jQuery and D3.js (included)
