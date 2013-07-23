@@ -274,7 +274,7 @@ DATA.iso_speed.sort(function(d1, d2) { return d1.ev - d2.ev; });
 DATA.exposure_bias.forEach(function(d) { d.ev = exposure_bias_ev(d.value); });
 DATA.exposure_bias.sort(function(d1, d2) { return d1.ev - d2.ev; });
 
-function histogram_compress(data, given_count) {
+function histogram_compress(data, given_count, _min, _max) {
     var min = d3.min(data, function(d) { return d.value; });
     var max = d3.max(data, function(d) { return d.value; });
     min = Math.floor(min) - 0.5;
@@ -286,6 +286,8 @@ function histogram_compress(data, given_count) {
     } else {
         count = given_count;
     }
+    if(_min !== undefined) min = _min;
+    if(_max !== undefined) max = _max;
     var bins = []
     for(var i = 0; i < count; i++) {
         bins[i] = {
@@ -323,7 +325,7 @@ make_barchart(CLeft, "ISO Speed", histogram_compress(DATA.iso_speed.map(function
 
 make_barchart(CLeft, "Exposure Bias", histogram_compress(DATA.exposure_bias.map(function(d) {
     return { value: d.ev, count: d.count };
-})), function(d) { return d.toFixed(2) + "EV" });
+}), 21, -3.5, 3.5), function(d) { return d.toFixed(2) + "EV" });
 
 make_barchart(CRight, "Exposure Value", histogram_compress(DATA.exposure_value.map(function(d) {
     return { value: parseFloat(d.value), count: d.count };
