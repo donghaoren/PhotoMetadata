@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Visualization</title>
+<title>Photography Statistics</title>
 <style type="text/css">
 
 body {
@@ -63,6 +63,7 @@ li span.bar {
 
 <div id="wrapper">
   <center><h1>Photography Statistics</h1></center>
+  <center><span class="info"></span></center>
   <div id="columns">
     <div id="column-left"></div>
     <div id="column-right"></div>
@@ -341,6 +342,7 @@ make_dist(CRight, "Exposure Program", sort_count(DATA.exposure_program));
 make_dist(CRight, "Camera Model", sort_count(DATA.camera_model));
 make_dist(CRight, "Lens Model", sort_count(DATA.lens_model));
 
+d3.select(".info").text("Total: " + DATA.raw.length + " photos");
 
 </script>
 </body>
