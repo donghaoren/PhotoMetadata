@@ -160,6 +160,14 @@ def statistics(db = "db.sqlite"):
         for (exposure_program, count, ) in c1.execute("SELECT exposure_program, COUNT(*) FROM photos GROUP BY exposure_program")
       ],
     "raw":
-      [ x for x in dict_gen(c1.execute("SELECT * FROM photos")) ]
+      [ x for x in dict_gen(c1.execute("""
+        SELECT
+          size, mtime,
+          original_time,
+          camera_model, lens_model,
+          focal_length,
+          exposure_program, exposure_bias,
+          shutter, aperture, iso_speed
+        FROM photos""")) ]
     }
     return data
