@@ -11,4 +11,5 @@ index.update(db = u"metadata.sqlite", root = path)
 
 statistics = index.statistics(db = u"metadata.sqlite")
 json_stat = json.dumps(statistics, ensure_ascii = False, indent = 2)
-open("statistics.json", "w").write(json_stat.encode("utf-8"))
+json_stat = "DATA = " + json_stat + ";"
+open("statistics.js", "w").write(json_stat.encode("utf-8"))

@@ -7,12 +7,12 @@ def process(path, opt):
     meta.read()
     ks = meta.exif_keys
 
-    # # Display all entries.
-    # for key in ks:
-    #     try:
-    #         if len(meta[key].human_value) < 100:
-    #             print "%s = %s" % (key, meta[key].human_value)
-    #     except: pass
+    # Display all entries.
+    for key in ks:
+        try:
+            if len(meta[key].human_value) < 100:
+                print "%s = %s" % (key, meta[key].human_value)
+        except: pass
 
     if "Exif.Image.Model" in ks:
         opt["camera_model"] = meta["Exif.Image.Model"].value.strip()
@@ -44,7 +44,7 @@ def process(path, opt):
     # This instead.
     if "Exif.Canon.LensModel" in ks:
         opt["lens_model"] = meta["Exif.Canon.LensModel"].human_value
-    
+
     for key in opt:
         if isinstance(opt[key], str):
             opt[key] = unicode(opt[key], "utf-8", errors = 'ignore')
