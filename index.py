@@ -122,3 +122,44 @@ def update(db = "db.sqlite", root = "."):
                 conn.commit()
                 raise
     conn.commit()
+
+def dict_gen(curs):
+    ''' From Python Essential Reference by David Beazley
+    '''
+    import itertools
+    field_names = [d[0].lower() for d in curs.description]
+    while True:
+        rows = curs.fetchmany()
+        if not rows: return
+        for row in rows:
+            yield dict(itertools.izip(field_names, row))
+
+def statistics(db = "db.sqlite"):
+    conn = sqlite.connect(db)
+    c1 = conn.cursor()
+
+    data = {
+    "shutter":
+      [ { "value": shutter, "count": count }
+        for (shutter, count, ) in c1.execute("SELECT shutter, COUNT(*) FROM photos GROUP BY shutter")
+      ],
+    "aperture":
+      [ { "value": aperture, "count": count }
+        for (aperture, count, ) in c1.execute("SELECT aperture, COUNT(*) FROM photos GROUP BY aperture")
+      ],
+    "iso_speed":
+      [ { "value": iso_speed, "count": count }
+        for (iso_speed, count, ) in c1.execute("SELECT iso_speed, COUNT(*) FROM photos GROUP BY iso_speed")
+      ],
+    "exposure_bias":
+      [ { "value": exposure_bias, "count": count }
+        for (exposure_bias, count, ) in c1.execute("SELECT exposure_bias, COUNT(*) FROM photos GROUP BY exposure_bias")
+      ],
+    "exposure_program":
+      [ { "value": exposure_program, "count": count }
+        for (exposure_program, count, ) in c1.execute("SELECT exposure_program, COUNT(*) FROM photos GROUP BY exposure_program")
+      ],
+    "raw":
+      [ x for x in dict_gen(c1.execute("SELECT * FROM photos")) ]
+    }
+    return data
