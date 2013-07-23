@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Visualization</title>
+</head>
+<body>
+
+<script type="text/javascript" src="statistics.js"></script>
+<script type="text/javascript" src="d3.v3.min.js"></script>
+<script type="text/javascript">
+
+function parseFractionAsFloat(f) {
+    var ind = f.indexOf("/");
+    if(ind < 0) return parseFloat(f);
+    return parseFloat(f.substr(0, ind)) / parseFloat(f.substr(ind + 1));
+}
+
+function aperture_ev(s) {
+    if(s[0] == "F") {
+        var num = parseFloat(s.substr(1));
+        if(num == 0) return;
+        return Math.log(num * num) / Math.log(2);
+    }
+}
+
+function shutter_ev(s) {
+    if(s[s.length - 1] == "s") {
+        var num = parseFractionAsFloat(s.substr(0, s.length - 2));
+        return Math.log(1 / num) / Math.log(2);
+    }
+    return;
+}
+
+function iso_speed_ev(s) {
+    var num = parseFloat(s);
+    return Math.log(s / 100) / Math.log(2);
+}
+
+
+var apply_styles = function(svg) {
+    svg.style("font", "10px sans-serif");
+    svg.selectAll(".axis path")
+        .style("fill", "none")
+        .style("stroke", "#000")
+        .style("shape-rendering", "crispEdges");
+    svg.selectAll(".axis line")
+        .style("fill", "none")
+        .style("stroke", "#000")
+        .style("shape-rendering", "crispEdges");
+
+    svg.selectAll(".x.axis path")
+        .style("display", "none");
+
+    svg.selectAll(".bar")
+        .style("fill", "rgba(31,119,180,0.1)");
+
+    svg.selectAll(".bar-std")
+        .style("fill", "rgba(31,119,180,0.3)");
+    svg.selectAll(".bar-bin")
+        .style("fill", "rgba(31,119,180,0.7)");
+    svg.selectAll(".bar-bin-all")
+        .style("fill", "rgba(255,127,14,0.5)");
+    svg.selectAll(".line")
+        .style("fill", "none")
+        .style("stroke", "rgba(31,119,180,1)")
+        .style("stroke-width", "2px")
+        .style("stroke-linejoin", "round")
+        .style("stroke-linecap", "round");
+    svg.selectAll("path.usa-data")
+        .style("stroke", "rgba(255,127,14,0.5)");
+};
+
+
+var make_barchart = function(name, data, tick_format) {
+  // data is [ { value: val, count: c } ]
+  var margin = {top: 20, right: 80, bottom: 30, left: 50},
+      width = 480 - margin.left - margin.right,
+      height = 200 - margin.top - margin.bottom;
+
+  var x = d3.scale.linear()
+      .range([0, width]);
+
+  var y = d3.scale.linear()
+      .range([height, 0]);
+
+  var xAxis = d3.svg.axis()
+      .scale(x)
+      .tickFormat(tick_format)
+      .ticks(8)
+      .orient("bottom");
+
+  var yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left");
+
+  var container = d3.select("body").append("div");
+  container.style("display", "inline-block");
+  container.append("h2").text(name);
+  var svg = container.append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    x.domain([ d3.min(data, function(d) { return d.value; }),
+               d3.max(data, function(d) { return d.value + d.d_value; }) ]);
+    y.domain([ d3.min(data, function(d) { return d.count; }),
+               d3.max(data, function(d) { return d.count; }) ]);
+    y.nice();
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+
+    var bar_width = width / data.length * 0.9;
+
+    svg.selectAll(".bar-bin")
+        .data(data)
+      .enter().append("rect")
+        .attr("class", "bar bar-bin")
+        .attr("x", function(d) { return x(d.value) + 0.25; })
+        .attr("width", function(d) { return x(d.value + d.d_value) - x(d.value) - 0.5; })
+        .attr("y", function(d) { return y(d.count); })
+        .attr("height", function(d) { return  height - y(d.count); });
+
+    apply_styles(svg);
+};
+
+DATA.shutter.forEach(function(d) { d.ev = shutter_ev(d.value); });
+DATA.shutter.sort(function(d1, d2) { return d1.ev - d2.ev; });
+DATA.aperture.forEach(function(d) { d.ev = aperture_ev(d.value); });
+DATA.aperture.sort(function(d1, d2) { return d1.ev - d2.ev; });
+DATA.iso_speed.forEach(function(d) { d.ev = iso_speed_ev(d.value); });
+DATA.iso_speed.sort(function(d1, d2) { return d1.ev - d2.ev; });
+
+function auto_width(data) {
+    return histogram_compress(data, 30);
+    for(var i = 0; i < data.length; i++) {
+        if(i < data.length - 1)
+            data[i].d_value = data[i + 1].value - data[i].value;
+        else
+            data[i].d_value = 1;
+    }
+    return data;
+}
+
+function histogram_compress(data, count) {
+    var min = d3.min(data, function(d) { return d.value; });
+    var max = d3.max(data, function(d) { return d.value; });
+    var bins = []
+    for(var i = 0; i < count; i++) {
+        bins[i] = {
+            value: min + (max - min) * i / count,
+            d_value: (max - min) / count,
+            count: 0
+        };
+        data.forEach(function(d) {
+            if(d.value >= bins[i].value && d.value < bins[i].d_value + bins[i].value) {
+                bins[i].count += d.count;
+            }
+        });
+    }
+    return bins;
+}
+
+make_barchart("Shutter", auto_width(DATA.shutter.map(function(d) {
+    return {
+        value: d.ev,
+        text: d.value,
+        count: d.count
+    };
+})), function(d) {
+    if(d > 0)
+        return "1/" + Math.pow(2, d) + "s"
+    else
+        return Math.pow(2, -d) + "s"
+});
+make_barchart("Aperture", auto_width(DATA.aperture.map(function(d) {
+    return {
+        value: d.ev,
+        text: d.value,
+        count: d.count
+    };
+})), function(d) {
+    return "F" + Math.sqrt(Math.pow(2, d)).toFixed(1);
+});
+make_barchart("ISO Speed", auto_width(DATA.iso_speed.map(function(d) {
+    return {
+        value: d.ev,
+        text: d.value,
+        count: d.count
+    };
+})), function(d) {
+    return Math.pow(2, d) * 100;
+});
+
+ev_count = { };
+DATA.raw.forEach(function(d) {
+    d.ev = shutter_ev(d.shutter) + aperture_ev(d.aperture) + iso_speed_ev(d.iso_speed);
+    if(d.ev != d.ev) {
+        return;
+    }
+    if(ev_count[d.ev]) {
+        ev_count[d.ev] += 1;
+    } else {
+        ev_count[d.ev] = 1;
+    }
+});
+var ev_array = [];
+for(var ev in ev_count) {
+    ev_array.push({
+        value: parseFloat(ev),
+        count: ev_count[ev]
+    });
+}
+ev_array.sort(function(d1, d2) { return d1.value - d2.value; });
+make_barchart("Exposure Value", histogram_compress(ev_array, 50), function(d) {
+    return d.toFixed(1);
+});
+
+
+</script>
+</body>
+</html>
