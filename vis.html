@@ -3,8 +3,73 @@
 <head>
 <meta charset="utf-8" />
 <title>Visualization</title>
+<style type="text/css">
+
+body {
+    font-size: 12px;
+    font-family: "Geneva CY", "Arial";
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+h2 { font-size: 14px; padding: 0.5em 0.5em; margin: 0; background-color: #EEE; }
+#wrapper { width: 1000px; margin: 0px auto; }
+#column-left {
+    width: 500px;
+    float: left;
+}
+#column-right {
+    width: 500px;
+    float: right;
+}
+
+.cell {
+    display: inline-block;
+    width: 490px;
+    padding: 0px;
+    margin: 5px;
+    background-color: #F8F8F8;
+    vertical-align: top;
+}
+ul {
+    list-style-type: none;
+    margin: 10px; padding: 0;
+}
+li {
+    margin: 5px 0; padding: 0;
+    background-color: rgba(255,255,255,0.4);
+    position: relative;
+    line-height: 16px;
+}
+li span.text { display: block; padding: 1px 5px; }
+li span.text-num {
+    display: block;
+    padding: 1px 5px;
+    position: absolute;
+    right: 0; top: 0;
+    font-size: 9px;
+    line-height: 16px;
+}
+li span.bar {
+    display: block;
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 0;
+    background-color: rgba(31,119,180, 0.2);
+}
+</style>
+
 </head>
 <body>
+
+<div id="wrapper">
+  <center><h1>Photography Statistics</h1></center>
+  <div id="columns">
+    <div id="column-left"></div>
+    <div id="column-right"></div>
+    <div style="clear: both"></div>
+  </div>
+  <center>designed by donghao.</center>
+</div>
 
 <script type="text/javascript" src="statistics.js"></script>
 <script type="text/javascript" src="d3.v3.min.js"></script>
@@ -32,6 +97,11 @@ function shutter_ev(s) {
     return;
 }
 
+function exposure_bias_ev(s) {
+    s = s.split(" ")[0];
+    return parseFractionAsFloat(s);
+}
+
 function iso_speed_ev(s) {
     var num = parseFloat(s);
     return Math.log(s / 100) / Math.log(2);
@@ -39,7 +109,7 @@ function iso_speed_ev(s) {
 
 
 var apply_styles = function(svg) {
-    svg.style("font", "10px sans-serif");
+    svg.style("font", '9px "Geneva CY", "Arial"');
     svg.selectAll(".axis path")
         .style("fill", "none")
         .style("stroke", "#000")
@@ -72,11 +142,11 @@ var apply_styles = function(svg) {
 };
 
 
-var make_barchart = function(name, data, tick_format) {
+function make_barchart(CC, name, data, tick_format) {
   // data is [ { value: val, count: c } ]
-  var margin = {top: 20, right: 80, bottom: 30, left: 50},
-      width = 480 - margin.left - margin.right,
-      height = 200 - margin.top - margin.bottom;
+  var margin = {top: 20, right: 10, bottom: 30, left: 50},
+      width = 490 - margin.left - margin.right,
+      height = 250 - margin.top - margin.bottom;
 
   var x = d3.scale.linear()
       .range([0, width]);
@@ -94,8 +164,8 @@ var make_barchart = function(name, data, tick_format) {
       .scale(y)
       .orient("left");
 
-  var container = d3.select("body").append("div");
-  container.style("display", "inline-block");
+  var container = CC.append("div");
+  container.attr("class", "cell");
   container.append("h2").text(name);
   var svg = container.append("svg")
       .attr("width", width + margin.left + margin.right)
@@ -125,13 +195,74 @@ var make_barchart = function(name, data, tick_format) {
         .data(data)
       .enter().append("rect")
         .attr("class", "bar bar-bin")
-        .attr("x", function(d) { return x(d.value) + 0.25; })
-        .attr("width", function(d) { return x(d.value + d.d_value) - x(d.value) - 0.5; })
+        .attr("x", function(d) { return x(d.value) + 0.5; })
+        .attr("width", function(d) { return x(d.value + d.d_value) - x(d.value) - 1; })
         .attr("y", function(d) { return y(d.count); })
         .attr("height", function(d) { return  height - y(d.count); });
 
     apply_styles(svg);
 };
+
+function make_dist(CC, name, data) {
+    var container = CC.append("div");
+    container.attr("class", "cell");
+    container.append("h2").text(name);
+    var ul = container.append("ul");
+    var max = d3.max(data, function(d) { return d.count; });
+    var sum = d3.sum(data, function(d) { return d.count; });
+    var li = ul.selectAll("li")
+      .data(data)
+    .enter().append("li");
+    li.append("span")
+        .attr("class", "text")
+        .text(function(d) { return d.value; });
+    li.append("span")
+        .attr("class", "text-num")
+        .text(function(d) { return d.count + " (" + (d.count / sum * 100).toFixed(1) + "%)"; });
+    li.append("span")
+        .attr("class", "bar")
+        .style("width", function(d) { return d.count / max * 100 + "%" });
+
+}
+
+function count_values(values) {
+    rr = { };
+    values.forEach(function(d) {
+        if(d != d) return;
+        if(d == "unknown" || d == "null" || !d || d == "?" || d == "") d = "unknown";
+        if(rr[d]) {
+            rr[d] += 1;
+        } else {
+            rr[d] = 1;
+        }
+    });
+    var cc = [];
+    for(var d in rr) {
+        cc.push({
+            value: d,
+            count: rr[d]
+        });
+    }
+    return cc;
+}
+
+function sort_count(d) {
+    return d.sort(function(d1, d2) { return d2.count - d1.count; });
+}
+
+
+DATA.raw.forEach(function(d) {
+    d.ev = shutter_ev(d.shutter) + aperture_ev(d.aperture) + iso_speed_ev(d.iso_speed);
+});
+
+DATA.shutter = count_values(DATA.raw.map(function(d) { return d.shutter; }));
+DATA.aperture = count_values(DATA.raw.map(function(d) { return d.aperture; }));
+DATA.iso_speed = count_values(DATA.raw.map(function(d) { return d.iso_speed; }));
+DATA.exposure_value = count_values(DATA.raw.map(function(d) { return d.ev; }));
+DATA.exposure_bias = count_values(DATA.raw.map(function(d) { return d.exposure_bias; }));
+DATA.camera_model = count_values(DATA.raw.map(function(d) { return d.camera_model; }));
+DATA.lens_model = count_values(DATA.raw.map(function(d) { return d.lens_model; }));
+DATA.exposure_program = count_values(DATA.raw.map(function(d) { return d.exposure_program; }));
 
 DATA.shutter.forEach(function(d) { d.ev = shutter_ev(d.value); });
 DATA.shutter.sort(function(d1, d2) { return d1.ev - d2.ev; });
@@ -140,20 +271,21 @@ DATA.aperture.sort(function(d1, d2) { return d1.ev - d2.ev; });
 DATA.iso_speed.forEach(function(d) { d.ev = iso_speed_ev(d.value); });
 DATA.iso_speed.sort(function(d1, d2) { return d1.ev - d2.ev; });
 
-function auto_width(data) {
-    return histogram_compress(data, 30);
-    for(var i = 0; i < data.length; i++) {
-        if(i < data.length - 1)
-            data[i].d_value = data[i + 1].value - data[i].value;
-        else
-            data[i].d_value = 1;
-    }
-    return data;
-}
+DATA.exposure_bias.forEach(function(d) { d.ev = exposure_bias_ev(d.value); });
+DATA.exposure_bias.sort(function(d1, d2) { return d1.ev - d2.ev; });
 
-function histogram_compress(data, count) {
+function histogram_compress(data, given_count) {
     var min = d3.min(data, function(d) { return d.value; });
     var max = d3.max(data, function(d) { return d.value; });
+    min = Math.floor(min) - 0.5;
+    max = Math.ceil(max) + 0.5;
+    var count = (max - min);
+    if(!given_count) {
+        var rcount = count;
+        while(count < 20) count += rcount * 2;
+    } else {
+        count = given_count;
+    }
     var bins = []
     for(var i = 0; i < count; i++) {
         bins[i] = {
@@ -170,60 +302,42 @@ function histogram_compress(data, count) {
     return bins;
 }
 
-make_barchart("Shutter", auto_width(DATA.shutter.map(function(d) {
-    return {
-        value: d.ev,
-        text: d.value,
-        count: d.count
-    };
+var CLeft = d3.select("#column-left");
+var CRight = d3.select("#column-right");
+
+make_barchart(CLeft, "Shutter", histogram_compress(DATA.shutter.map(function(d) {
+    return { value: d.ev, count: d.count };
 })), function(d) {
     if(d > 0)
         return "1/" + Math.pow(2, d) + "s"
     else
         return Math.pow(2, -d) + "s"
 });
-make_barchart("Aperture", auto_width(DATA.aperture.map(function(d) {
-    return {
-        value: d.ev,
-        text: d.value,
-        count: d.count
-    };
-})), function(d) {
-    return "F" + Math.sqrt(Math.pow(2, d)).toFixed(1);
-});
-make_barchart("ISO Speed", auto_width(DATA.iso_speed.map(function(d) {
-    return {
-        value: d.ev,
-        text: d.value,
-        count: d.count
-    };
-})), function(d) {
-    return Math.pow(2, d) * 100;
+make_barchart(CRight, "Aperture", histogram_compress(DATA.aperture.map(function(d) {
+    return { value: d.ev, count: d.count };
+})), function(d) { return "F" + Math.sqrt(Math.pow(2, d)).toFixed(1); });
+
+make_barchart(CLeft, "ISO Speed", histogram_compress(DATA.iso_speed.map(function(d) {
+    return { value: d.ev, count: d.count };
+})), function(d) { return Math.pow(2, d) * 100; });
+
+make_barchart(CLeft, "Exposure Bias", histogram_compress(DATA.exposure_bias.map(function(d) {
+    return { value: d.ev, count: d.count };
+})), function(d) { return d.toFixed(2) + "EV" });
+
+make_barchart(CRight, "Exposure Value", histogram_compress(DATA.exposure_value.map(function(d) {
+    return { value: parseFloat(d.value), count: d.count };
+})), function(d) { return d.toFixed(1) +"EV"; });
+
+make_barchart(CLeft, "Time (Hours of Day)", histogram_compress(DATA.raw.map(function(d) {
+    return { count: 1, value: new Date(d.original_time * 1000).getHours() };
+})), function(x) {
+    return x;
 });
 
-ev_count = { };
-DATA.raw.forEach(function(d) {
-    d.ev = shutter_ev(d.shutter) + aperture_ev(d.aperture) + iso_speed_ev(d.iso_speed);
-    if(d.ev != d.ev) {
-        return;
-    }
-    if(ev_count[d.ev]) {
-        ev_count[d.ev] += 1;
-    } else {
-        ev_count[d.ev] = 1;
-    }
-});
-var ev_array = [];
-for(var ev in ev_count) {
-    ev_array.push({
-        value: parseFloat(ev),
-        count: ev_count[ev]
-    });
-}
-ev_array.sort(function(d1, d2) { return d1.value - d2.value; });
-make_barchart("Exposure Value", histogram_compress(ev_array, 50), function(d) {
-    return d.toFixed(1);
-});
+make_dist(CRight, "Exposure Program", sort_count(DATA.exposure_program));
+make_dist(CRight, "Camera Model", sort_count(DATA.camera_model));
+make_dist(CRight, "Lens Model", sort_count(DATA.lens_model));
 
 
 </script>
