@@ -20,11 +20,11 @@ Dependencies
 Usage
 ----
 
-1. Write config.ini to tell the program where your photos are.
+Write config.ini to tell the program where your photos are.
 
-  [main]
-  path = <path to a directory containing your RAW files>
+    [main]
+    path = <path to a directory containing your RAW files>
 
-2. Run `python run.py`.
+Run `python run.py`.
 
-3. Open `vis.html` to see the results.
+Open `vis.html` to see the results.
