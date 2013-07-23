@@ -3,6 +3,8 @@ Photo Metadata
 
 Collect RAW files' metadata into a SQLite database and create a visualization for them.
 
+Currently only process RAW files, Canon's .CR2 files and Panasonic's .RW2 files are supported. **JPEG files are not processed.**
+
 License
 ----
 
